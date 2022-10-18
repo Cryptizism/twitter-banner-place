@@ -17,25 +17,27 @@ const credentials = {
 const client = new Twitter(credentials);
 
 async function getCanvasImage(){
-    return await apiClient.download(process.env.MAGMA_PROJECT_ID, 'png').then((stream) => { stream.stream.pipe(fs.createWriteStream('image.png')); });
+    return await apiClient.download(process.env.MAGMA_PROJECT_ID, 'png').then(async (stream) => { await stream.stream.pipe(fs.createWriteStream('image.png')); });
 }
 
-function base64_encode(file) {
+async function base64_encode(file) {
     // read binary data
-    var bitmap = fs.readFileSync(file);
+    var bitmap = await fs.readFileSync(file);
     // convert binary data to base64 encoded string
     return new Buffer.from(bitmap).toString('base64');
 }
 
 async function uploadBanner(){
     var base64;
-    await getCanvasImage().then(() => { base64 = base64_encode('image.png'); });
-    client.post('account/update_profile_banner', { banner: base64 }, (error, data, response) => {
-        if (error) {
-            console.log("failed to update profile banner", error);
-        } else {
-            console.log("updated profile banner");
-        }
+    await getCanvasImage().then(async () => { base64 = await base64_encode('image.png'); }).then(() => {
+        
+        client.post('account/update_profile_banner', { banner: base64 }, (error, data, response) => {
+            if (error) {
+                console.error("failed to update profile banner", error);
+            } else {
+                console.log("updated profile banner");
+            }
+        })
     });
 }
 
